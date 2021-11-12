@@ -23,43 +23,37 @@ func GetNetInterface() (ipv4NetInterfaces []NetInterface, ipv6NetInterfaces []Ne
 	// https://en.wikipedia.org/wiki/IPv6_address#General_allocation
 	_, ipv6Unicast, _ := net.ParseCIDR("2000::/3")
 
-	for i := 0; i < len(allNetInterfaces); i++ {
-		if (allNetInterfaces[i].Flags & net.FlagUp) != 0 {
-			addrs, _ := allNetInterfaces[i].Addrs()
-			ipv4 := []string{}
-			ipv6 := []string{}
+	for _, netInterface := range allNetInterfaces {
+		if (netInterface.Flags & net.FlagUp) != 0 {
+			addrs, _ := netInterface.Addrs()
+			ipv4 := 0
+			ipv6 := 0
 
 			for _, address := range addrs {
 				if ipnet, ok := address.(*net.IPNet); ok && ipnet.IP.IsGlobalUnicast() {
 					ones, bits := ipnet.Mask.Size()
 					// 需匹配全局单播地址
-					if bits == 128 && ones < bits && ipv6Unicast.Contains(ipnet.IP) {
-						ipv6 = append(ipv6, ipnet.IP.String())
+					if bits == 128 && ones <= bits && ipv6Unicast.Contains(ipnet.IP) {
+						ipv6NetInterfaces = append(
+							ipv6NetInterfaces,
+							NetInterface{
+								Name:    fmt.Sprintf(" %v / %v (%v) ", netInterface.Name, ones, ipv4),
+								Address: []string{ipnet.IP.String()},
+							},
+						)
+						ipv4++
 					}
 					if bits == 32 {
-						ipv4 = append(ipv4, ipnet.IP.String())
+						ipv4NetInterfaces = append(
+							ipv4NetInterfaces,
+							NetInterface{
+								Name:    fmt.Sprintf(" %v / %v (%v) ", netInterface.Name, ones, ipv6),
+								Address: []string{ipnet.IP.String()},
+							},
+						)
+						ipv6++
 					}
 				}
-			}
-
-			if len(ipv4) > 0 {
-				ipv4NetInterfaces = append(
-					ipv4NetInterfaces,
-					NetInterface{
-						Name:    allNetInterfaces[i].Name,
-						Address: ipv4,
-					},
-				)
-			}
-
-			if len(ipv6) > 0 {
-				ipv6NetInterfaces = append(
-					ipv6NetInterfaces,
-					NetInterface{
-						Name:    allNetInterfaces[i].Name,
-						Address: ipv6,
-					},
-				)
 			}
 
 		}

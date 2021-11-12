@@ -128,7 +128,7 @@ func getService() service.Service {
 		DisplayName: "ddns-go",
 		Description: "简单好用的DDNS。自动更新域名解析到公网IP(支持阿里云、腾讯云dnspod、Cloudflare、华为云)",
 		Arguments:   []string{"-l", *listen, "-f", strconv.Itoa(*every), "-c", *configFilePath},
-		Option: options,
+		Option:      options,
 	}
 
 	prg := &program{}
